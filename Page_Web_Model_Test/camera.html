@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+
+        video {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: block;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 30px;
+            color: #3498db;
+        }
+
+        #capturedImage {
+            max-width: 400px;
+            margin-top: 20px;
+            display: none;
+        }
+        #captureImage-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        #switchButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #webcam-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        #webcam {
+            max-width: 100%;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+        }
+       #Tittle {
+            margin-top: 5px;
+            font-size: 50px;
+            color: rgb(255, 143, 6);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+</head>
+
+<body>
+    <h1 id="Tittle">Fruits Classification Model</h1>
+    <div id="webcam-container">
+        <video id="webcam" width="224" height="224" autoplay></video>
+    </div>
+    
+    <button onclick="captureAndClassify()">Capture and Classify</button>
+    <p id="result"></p>
+    <div>
+
+    <div id="captureImage-container"><img id="capturedImage"></div>
+    
+    <button id="switchButton" onclick="switchToUpload()">Switch to Upload</button>
+
+    <script>
+        async function setupWebcam() {
+            const video = document.getElementById('webcam');
+            const stream = await navigator.mediaDevices.getUserMedia({ 'video': true });
+            video.srcObject = stream;
+
+            return new Promise((resolve) => {
+                video.onloadedmetadata = () => {
+                    resolve();
+                };
+            });
+        }
+
+        async function captureAndClassify() {
+            const video = document.getElementById('webcam');
+            const resultElement = document.getElementById('result');
+            const capturedImage = document.getElementById('capturedImage');
+
+            resultElement.innerHTML = ''; // Clear previous results
+
+            const model = await tf.loadLayersModel('model.json').catch((error) => {
+                resultElement.innerHTML = `Error loading the model: ${error.message}`;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = video.width;
+            canvas.height = video.height;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const tensor = tf.browser.fromPixels(imageData).resizeNearestNeighbor([100, 100]).toFloat().div(tf.scalar(255.0)).expandDims();
+            const predictions = model.predict(tensor);
+            const result = predictions.argMax(1).dataSync()[0];
+
+            switch (result) {
+                case 0:
+                    resultElement.innerHTML = 'Predicted class: Apple';
+                    break;
+                case 1:
+                    resultElement.innerHTML = 'Predicted class: Avocado';
+                    break;
+                case 2:
+                    resultElement.innerHTML = 'Predicted class: Banana';
+                    break;
+                case 3:
+                    resultElement.innerHTML = 'Predicted class: Coconut';
+                    break;
+                case 4:
+                    resultElement.innerHTML = 'Predicted class: Grape';
+                    break;
+                case 5:
+                    resultElement.innerHTML = 'Predicted class: Mango';
+                    break;
+                case 6:
+                    resultElement.innerHTML = 'Predicted class: Papaya';
+                    break;
+                case 7:
+                    resultElement.innerHTML = 'Predicted class: Pineapple';
+                    break;
+                case 8:
+                    resultElement.innerHTML = 'Predicted class: Rambutan';
+                    break;
+                case 9:
+                    resultElement.innerHTML = 'Predicted class: Raspberry';
+                    break;
+                default:
+                    resultElement.innerHTML = 'Predicted class: Unknown';
+                    break;
+            }
+
+            // Display the captured image
+            capturedImage.src = canvas.toDataURL('image/jpeg');
+            capturedImage.style.display = 'block';
+        }
+        function switchToUpload() {
+            window.location.href = 'index.html';
+        }
+
+        async function init() {
+            await setupWebcam();
+        }
+
+        init();
+    </script>
+
+</body>
+
+</html>
